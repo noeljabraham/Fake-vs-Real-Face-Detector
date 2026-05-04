@@ -97,6 +97,12 @@ streamlit run app.py
 
 Then open the local Streamlit URL shown in the terminal and upload a `.jpg`, `.jpeg`, or `.png` face image.
 
+## Deploy on Streamlit Cloud
+
+This app needs a TensorFlow-compatible Python version. Use Python `3.12` in Streamlit Cloud advanced settings.
+
+If the app was already deployed with Python `3.14`, delete the Streamlit app and redeploy it with Python `3.12`. Streamlit Cloud does not change the Python version of an existing app after deployment.
+
 ## Model
 
 The model is a simple convolutional neural network:
@@ -125,4 +131,3 @@ Labels:
 - scikit-learn
 - Streamlit
 - Pillow
-
