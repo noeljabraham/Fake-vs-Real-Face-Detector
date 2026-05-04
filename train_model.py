@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import tensorflow as tf
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 DATA_DIR = "."
@@ -70,5 +71,9 @@ model.fit(
 
 os.makedirs("model", exist_ok=True)
 model.save("model/fake_real_detector.h5")
+np.savez_compressed(
+    "model/fake_real_detector_weights.npz",
+    **{f"arr_{i}": weight.numpy().astype("float32") for i, weight in enumerate(model.weights)}
+)
 
 print("Model saved successfully.")

@@ -73,6 +73,12 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+For model training, install training dependencies instead:
+
+```bash
+pip install -r requirements-train.txt
+```
+
 ## Train Model
 
 Make sure `Fake faces/`, `Real faces/`, and `metadata.csv` are in the project root, then run:
@@ -99,9 +105,9 @@ Then open the local Streamlit URL shown in the terminal and upload a `.jpg`, `.j
 
 ## Deploy on Streamlit Cloud
 
-This app needs a TensorFlow-compatible Python version. Use Python `3.12` in Streamlit Cloud advanced settings.
+The deployed app uses NumPy inference through `model/fake_real_detector_weights.npz`, so Streamlit Cloud does not need TensorFlow.
 
-If the app was already deployed with Python `3.14`, delete the Streamlit app and redeploy it with Python `3.12`. Streamlit Cloud does not change the Python version of an existing app after deployment.
+If you retrain the model, export updated NumPy weights before deploying again.
 
 ## Model
 

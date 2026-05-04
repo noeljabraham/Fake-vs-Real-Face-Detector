@@ -1,33 +1,54 @@
 import streamlit as st
 from PIL import Image
 import numpy as np
-import sys
+from numpy.lib.stride_tricks import sliding_window_view
 
-MODEL_PATH = "model/fake_real_detector.h5"
+MODEL_PATH = "model/fake_real_detector_weights.npz"
 IMG_SIZE = (128, 128)
 
 st.title("Fake vs Real Face Detector")
 st.write("Upload a face image and the model will predict whether it is real or fake.")
 
+
 @st.cache_resource
-def load_model():
-    try:
-        import tensorflow as tf
-    except ImportError:
-        return None
+def load_weights():
+    data = np.load(MODEL_PATH)
+    return [data[f"arr_{i}"] for i in range(10)]
 
-    return tf.keras.models.load_model(MODEL_PATH)
 
-model = load_model()
+def relu(x):
+    return np.maximum(x, 0)
 
-if model is None:
-    st.error("TensorFlow is not installed in this Streamlit environment.")
-    st.info(
-        f"This app is running Python {sys.version.split()[0]}. "
-        "TensorFlow is not available for Python 3.14 on Streamlit Cloud. "
-        "Delete the app and redeploy it with Python 3.12 in Advanced settings."
-    )
-    st.stop()
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def conv2d_valid(x, kernel, bias):
+    patches = sliding_window_view(x, kernel.shape[:3], axis=(0, 1, 2))
+    patches = patches[:, :, 0, :, :, :]
+    return np.tensordot(patches, kernel, axes=([2, 3, 4], [0, 1, 2])) + bias
+
+
+def max_pool2d(x):
+    h = (x.shape[0] // 2) * 2
+    w = (x.shape[1] // 2) * 2
+    x = x[:h, :w, :]
+    return x.reshape(h // 2, 2, w // 2, 2, x.shape[2]).max(axis=(1, 3))
+
+
+def predict(image):
+    weights = load_weights()
+    x = conv2d_valid(image, weights[0], weights[1])
+    x = max_pool2d(relu(x))
+    x = conv2d_valid(x, weights[2], weights[3])
+    x = max_pool2d(relu(x))
+    x = conv2d_valid(x, weights[4], weights[5])
+    x = max_pool2d(relu(x))
+    x = x.reshape(1, -1)
+    x = relu(x @ weights[6] + weights[7])
+    x = sigmoid(x @ weights[8] + weights[9])
+    return float(x[0][0])
 
 uploaded_file = st.file_uploader(
     "Upload an image",
@@ -39,10 +60,9 @@ if uploaded_file is not None:
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
     img = image.resize(IMG_SIZE)
-    img_array = np.array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
+    img_array = np.array(img, dtype=np.float32) / 255.0
 
-    prediction = model.predict(img_array)[0][0]
+    prediction = predict(img_array)
 
     st.subheader("Prediction")
 
