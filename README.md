@@ -8,6 +8,7 @@ CNN-based image classifier that predicts whether an uploaded face image is real 
 - Uses TensorFlow/Keras CNN layers for image classification
 - Loads image paths and labels from `metadata.csv`
 - Saves trained model to `model/fake_real_detector.h5`
+- Exports NumPy weights to `model/fake_real_detector_weights.npz`
 - Provides Streamlit UI for uploading an image and viewing prediction confidence
 
 ## Dataset
@@ -20,13 +21,14 @@ Expected project structure:
 
 ```text
 .
-├── Fake faces/
-├── Real faces/
-├── metadata.csv
-├── train_model.py
-├── app.py
-├── requirements.txt
-└── model/
+|-- Fake faces/
+|-- Real faces/
+|-- metadata.csv
+|-- train_model.py
+|-- app.py
+|-- requirements.txt
+|-- requirements-train.txt
+`-- model/
 ```
 
 `metadata.csv` should contain:
@@ -67,7 +69,7 @@ Activate virtual environment:
 source .venv/bin/activate
 ```
 
-Install dependencies:
+Install app dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -87,11 +89,39 @@ Make sure `Fake faces/`, `Real faces/`, and `metadata.csv` are in the project ro
 python train_model.py
 ```
 
-Training saves the model here:
+Training saves:
 
 ```text
 model/fake_real_detector.h5
+model/fake_real_detector_weights.npz
 ```
+
+## Use with TensorFlow
+
+Use TensorFlow when you want to train, retrain, or run the original Keras model locally.
+
+Install TensorFlow training dependencies:
+
+```bash
+pip install -r requirements-train.txt
+```
+
+Train the model:
+
+```bash
+python train_model.py
+```
+
+Load the Keras model:
+
+```python
+import tensorflow as tf
+
+model = tf.keras.models.load_model("model/fake_real_detector.h5")
+prediction = model.predict(image_batch)
+```
+
+For Streamlit Cloud deployment, use `requirements.txt`. The deployed app uses `model/fake_real_detector_weights.npz` with NumPy inference, so it can run without TensorFlow.
 
 ## Run App
 
@@ -107,7 +137,7 @@ Then open the local Streamlit URL shown in the terminal and upload a `.jpg`, `.j
 
 The deployed app uses NumPy inference through `model/fake_real_detector_weights.npz`, so Streamlit Cloud does not need TensorFlow.
 
-If you retrain the model, export updated NumPy weights before deploying again.
+If you retrain the model, export updated NumPy weights before deploying again. `train_model.py` does this automatically.
 
 ## Model
 
@@ -125,14 +155,16 @@ Labels:
 
 ## Notes
 
-- The app expects `model/fake_real_detector.h5` to exist before launch.
+- The Streamlit app expects `model/fake_real_detector_weights.npz` to exist before launch.
+- The TensorFlow model is saved as `model/fake_real_detector.h5` for local training and reuse.
 - Training script expects PNG images because it uses `tf.image.decode_png`.
-- Large datasets and trained model files may be too large for GitHub. Consider using `.gitignore` or Git LFS for image folders and `.h5` model files.
+- Large datasets and trained model files may be too large for GitHub. Consider using `.gitignore` or Git LFS for image folders and model files.
 
 ## Tech Stack
 
 - Python
 - TensorFlow/Keras
+- NumPy
 - Pandas
 - scikit-learn
 - Streamlit
